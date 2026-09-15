@@ -1,0 +1,67 @@
+paramName:
+  CustomKey: 
+    Description: KeyPairName
+    Type: AWS::EC2::KeyPair::KeyName
+Resources:
+  testvpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 172.18.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: testvpc
+TestIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: TestIGW
+TestVPCGWAttachment:
+    DependsOn: testvpc
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref testvpc
+      InternetGatewayId: !Ref TestIGW
+TestPrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      availabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId: !Ref testvpc
+      CidrBlock: 172.18.1.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: TestPrivateSubnet
+TestPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      availabilityZone: !Select [ 1, !GetAZs '' ]
+      VpcId: !Ref testvpc
+      CidrBlock: 172.18.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: TestPublicSubnet
+TestPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: TestIGW
+    Properties:
+      VpcId: !Ref testvpc
+      Tags:
+        - Key: Name
+          Value: TestPublicRouteTable
+TestPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: TestVPCGWAttachment
+    Properties:
+      RouteTableId: !Ref TestPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref TestIGW
+TestPublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref TestPublicSubnet
+      RouteTableId: !Ref TestPublicRouteTable
+
