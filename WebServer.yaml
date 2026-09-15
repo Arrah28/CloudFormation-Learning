@@ -1,9 +1,14 @@
-paramName:
-  CustomKey: 
-    Description: KeyPairName
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Production Network Infrastructure and Web Server for Plan-Letting Platform
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair for SSH access
     Type: AWS::EC2::KeyPair::KeyName
+    Default: vockey
+
 Resources:
-  testvpc:
+  PlanLettingVPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 172.18.0.0/16
@@ -11,64 +16,76 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: testvpc
-TestIGW:
+          Value: PlanLetting-Production-VPC
+
+  InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: TestIGW
-TestVPCGWAttachment:
-    DependsOn: testvpc
+          Value: PlanLetting-InternetGateway
+
+  VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn: PlanLettingVPC
     Properties:
-      VpcId: !Ref testvpc
-      InternetGatewayId: !Ref TestIGW
-TestPrivateSubnet:
+      VpcId: !Ref PlanLettingVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PrivateSubnetAZ1:
     Type: AWS::EC2::Subnet
     Properties:
-      availabilityZone: !Select [ 0, !GetAZs '' ]
-      VpcId: !Ref testvpc
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      VpcId: !Ref PlanLettingVPC
       CidrBlock: 172.18.1.0/24
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: TestPrivateSubnet
-TestPublicSubnet:
+          Value: PlanLetting-Private-Subnet-AZ1
+
+  PublicSubnetAZ2:
     Type: AWS::EC2::Subnet
     Properties:
-      availabilityZone: !Select [ 1, !GetAZs '' ]
-      VpcId: !Ref testvpc
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+      VpcId: !Ref PlanLettingVPC
       CidrBlock: 172.18.2.0/24
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: TestPublicSubnet1
-TestPublicRouteTable:
+          Value: PlanLetting-Public-Subnet-AZ2
+
+  PublicRouteTable:
     Type: AWS::EC2::RouteTable
-    DependsOn: TestIGW
+    DependsOn: InternetGateway
     Properties:
-      VpcId: !Ref testvpc
+      VpcId: !Ref PlanLettingVPC
       Tags:
         - Key: Name
-          Value: TestPublicRouteTable
-TestPublicRoute:
+          Value: PlanLetting-Public-RouteTable
+
+  PublicDefaultRoute:
     Type: AWS::EC2::Route
-    DependsOn: TestVPCGWAttachment
+    DependsOn: VPCGatewayAttachment
     Properties:
-      RouteTableId: !Ref TestPublicRouteTable
+      RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref TestIGW
-TestPublicSubnetRouteTableAssociation:
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref TestPublicSubnet
-      RouteTableId: !Ref TestPublicRouteTable
-TestWebSG:
+      SubnetId: !Ref PublicSubnetAZ2
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicWebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: EnduroWebSG
-      VpcId: !Ref testvpc
+      GroupDescription: Allow HTTP and HTTPS traffic from anywhere
+      VpcId: !Ref PlanLettingVPC
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           Description: Allow HTTP traffic from anywhere
@@ -80,31 +97,32 @@ TestWebSG:
           IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-      tags:
+      Tags:
         - Key: Name
-          Value: TestWebSG Ruke
-TestWebServer:
+          Value: PlanLetting-Web-SG
+
+  WebServerInstance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
-      KeyName: !Ref CustomKey
+      KeyName: !Ref KeyName
       ImageId: ami-0e34b50e714a297f1
       Monitoring: false
-      SubnetId: !Ref TestPublicSubnet1
+      SubnetId: !Ref PublicSubnetAZ2
       SecurityGroupIds:
-        - !Ref TestWebSG
-      UserData:
-        Fn::Base64: !Sub |
+        - !Ref PublicWebSecurityGroup
+      UserData: !Base64 !Sub |
+        Fn::Sub: |
           #!/bin/bash -ex
           sudo dnf update -y
           sudo dnf install httpd -y
           sudo systemctl enable httpd
           sudo systemctl start httpd
-          
-        Tags:
-          - Key: Name
-            Value: ApacheWebServer
+      Tags:
+        - Key: Name
+          Value: PlanLetting-Apache-WebServer
+
 Outputs:
   InstancePublicIP:
-  Description: Public IP of Web Server
-  Value: !GetAtt testWebServer.pubplicIP
+    Description: Public IP of the Web Server
+    Value: !GetAtt WebServerInstance.PublicIp
