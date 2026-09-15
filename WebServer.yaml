@@ -111,8 +111,9 @@ Resources:
       SubnetId: !Ref PublicSubnetAZ2
       SecurityGroupIds:
         - !Ref PublicWebSecurityGroup
-      UserData: !Base64 !Sub |
-        Fn::Sub: |
+        
+      UserData:
+        Fn::Base64: !Sub |
           #!/bin/bash -ex
           sudo dnf update -y
           sudo dnf install httpd -y
