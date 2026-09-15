@@ -23,7 +23,7 @@ jobs:
         run: | 
           aws cloudformation deploy \
           --stack-name PlanLetting-v1 \
-          --template-file /V1/WebServer.yaml \
+          --template-file V1/WebServer.yaml \
           --parameter-overrides KeyName=vockey \
           --capabilities CAPABILITY_NAMED_IAM \
           
