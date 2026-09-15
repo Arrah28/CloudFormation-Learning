@@ -1,0 +1,35 @@
+name: Deploy CloudFormation
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Repo
+        uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+          
+      - name: List Files
+        run: ls -R
+        working-directory: ${{ github.workspace }}
+        
+      - name: Deploy CloudFormation (v1)
+        run: | 
+          aws cloudformation deploy \
+          --stack-name PlanLetting-v1 \
+          --template-file WebServer.yaml \
+          --parameter-overrides KeyName=vockey \
+          --capabilities CAPABILITY_NAMED_IAM \
+          
+      - name: Get Outputs
+        run: | 
+          aws cloudformation describe-stacks \
+          --stack-name PlanLetting-v1 \
+          --query "Stacks[0].Outputs[*].{Key:OutputKey,Value:OutputValue}" \
+          --output text
