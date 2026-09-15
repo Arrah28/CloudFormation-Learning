@@ -43,7 +43,7 @@ TestPublicSubnet:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: TestPublicSubnet
+          Value: TestPublicSubnet1
 TestPublicRouteTable:
     Type: AWS::EC2::RouteTable
     DependsOn: TestIGW
@@ -64,4 +64,47 @@ TestPublicSubnetRouteTableAssociation:
     Properties:
       SubnetId: !Ref TestPublicSubnet
       RouteTableId: !Ref TestPublicRouteTable
-
+TestWebSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EnduroWebSG
+      VpcId: !Ref testvpc
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow HTTP traffic from anywhere
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: Allow HTTPS
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+      tags:
+        - Key: Name
+          Value: TestWebSG Ruke
+TestWebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref CustomKey
+      ImageId: ami-0e34b50e714a297f1
+      Monitoring: false
+      SubnetId: !Ref TestPublicSubnet1
+      SecurityGroupIds:
+        - !Ref TestWebSG
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -ex
+          sudo dnf update -y
+          sudo dnf install httpd -y
+          sudo systemctl enable httpd
+          sudo systemctl start httpd
+          
+        Tags:
+          - Key: Name
+            Value: ApacheWebServer
+Outputs:
+  InstancePublicIP:
+  Description: Public IP of Web Server
+  Value: !GetAtt testWebServer.pubplicIP
