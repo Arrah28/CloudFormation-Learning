@@ -1,357 +1,90 @@
-# 🏨 Plan-Letting Hospitality Platform — Cloud Infrastructure
+# Plan-Letting Hospitality Platform — CloudFormation + GitHub Actions
 
-> **Software Defined Networks & Edge Services (505AZ)**
-> Automated cloud infrastructure for the **Plan-Letting Hospitality Platform**, developed in accordance with the `505AZ_2627_FT_B1_N.pdf` module specification.
+Infrastructure as Code for a hospitality booking platform, provisioned on AWS with **CloudFormation** and deployed through a **GitHub Actions** pipeline. Built for the *Software Defined Networks & Edge Services* (505AZ) module at Coventry University; the final design is multi-cloud, with video delivery on Azure.
 
----
+> **Status: v1 trial build.** Networking foundation and a working Apache web server, deployed by pipeline. The private application tier, RDS, VPC peering and the Azure edge are on the roadmap below.
 
-## 📖 Project Overview
+## What v1 deploys
 
-The **Plan-Letting Hospitality Platform** is designed as a **multi-cloud, multi-layered cloud architecture**, combining AWS and Microsoft Azure services.
+[`V1/WebServer.yaml`](V1/WebServer.yaml) is a single stack that creates:
 
-The core application infrastructure will run on **AWS** and will be provisioned and managed through a fully automated **Infrastructure as Code (IaC)** and **CI/CD** workflow using:
+| Resource | Detail |
+|---|---|
+| VPC | `172.18.0.0/16`, DNS hostnames and resolution enabled |
+| Subnets | Private `172.18.1.0/24` (AZ 1) and public `172.18.2.0/24` (AZ 2, auto-assign public IP) |
+| Internet Gateway + route table | Default route `0.0.0.0/0` → IGW, associated with the public subnet |
+| Security group | Inbound 80 and 443 from anywhere |
+| EC2 web server | `t2.micro` Amazon Linux in the public subnet; user-data installs and starts Apache |
+| Output | `InstancePublicIP` so the pipeline can print where the server is |
 
-* ☁️ **Amazon Web Services (AWS)**
-* 🏗️ **AWS CloudFormation**
-* 🔄 **GitHub Actions**
-* 🌐 **Microsoft Azure**
-* 📦 **Azure Blob Storage**
-* 🚪 **Azure Front Door**
-* 🎥 **HTTP Live Streaming (HLS)**
+| Stack resources | Apache responding |
+|---|---|
+| ![](V1/PlanLetting-Apache%20Webserver.png) | ![](V1/Functional%20Apache.png) |
 
-The frontend will support **high-definition video demonstrations** using HLS. Video assets will be stored in **Azure Blob Storage** and delivered globally through **Azure Front Door**.
+## CI/CD
 
-The Azure edge environment will be configured manually using the **Azure CLI**.
+[`.github/workflows/main.yml`](.github/workflows/main.yml) is a manually triggered (`workflow_dispatch`) pipeline that:
 
----
+1. Checks out the repo.
+2. Assumes AWS credentials from repository secrets (`aws-actions/configure-aws-credentials`).
+3. Runs `aws cloudformation deploy` against `V1/WebServer.yaml` with `CAPABILITY_NAMED_IAM`.
+4. Prints the stack outputs.
 
-## 🚀 Current Release — Version 1 (Trial Build)
+`cloudformation deploy` is idempotent, so re-running the workflow updates the stack in place rather than failing on an existing one.
 
-The current **v1 release** is an initial functional prototype focused on establishing the foundational AWS networking infrastructure.
+## Deploying it yourself
 
-The deployment successfully provisions:
+```bash
+aws cloudformation deploy \
+  --stack-name PlanLetting-v1 \
+  --template-file V1/WebServer.yaml \
+  --parameter-overrides KeyName=<your-keypair> \
+  --capabilities CAPABILITY_NAMED_IAM
 
-| Component                     | Status            |
-| ----------------------------- | ----------------- |
-| 🌐 VPC                        | ✅ Implemented     |
-| 🔓 Public Subnet              | ✅ Implemented     |
-| 🔒 Private Subnet             | ✅ Implemented     |
-| 🛣️ Route Tables              | ✅ Implemented     |
-| 💻 EC2 Web Server             | ✅ Implemented     |
-| ⚙️ EC2 Bootstrap Script       | ✅ Implemented     |
-| 🏗️ CloudFormation Deployment | ✅ Implemented     |
-| 🔄 CI/CD Pipeline             | 🚧 In Development |
-| ⚖️ Application Load Balancer  | 🚧 Planned        |
-| 📈 Auto Scaling               | 🚧 Planned        |
-| 🗄️ RDS Database              | 🚧 Planned        |
-| 🔗 VPC Peering                | 🚧 Planned        |
-| 🛠️ Management Instance       | 🚧 Planned        |
-| ☁️ Azure Edge Environment     | 🚧 Planned        |
-
----
-
-## ⚠️ Known Limitations in v1
-
-The current implementation is intentionally a **trial build** and does not yet represent the final production architecture.
-
-### 🧱 1. Monolithic Architecture
-
-All infrastructure resources are currently defined within a **single CloudFormation stack**.
-
-This creates:
-
-* 🔴 A larger blast radius
-* 🔴 Difficult maintenance
-* 🔴 Reduced modularity
-* 🔴 Less flexibility when deploying individual components
-
-The final implementation will separate the infrastructure into **modular CloudFormation stacks**.
-
----
-
-### 🌍 2. Public Web Server Exposure
-
-The current Apache web server is deployed within a **public subnet**.
-
-While this is suitable for the initial prototype, the final architecture requires application servers to be deployed within a **private subnet**.
-
-The production traffic flow will instead be:
-
-```text
-🌐 Internet
-     │
-     ▼
-⚖️ Application Load Balancer
-     │
-     ▼
-🔒 Private Subnet
-     │
-     ▼
-🖥️ Auto Scaling Web Servers
+aws cloudformation describe-stacks --stack-name PlanLetting-v1 \
+  --query "Stacks[0].Outputs" --output table
 ```
 
-This will significantly improve the security posture of the application tier.
+Or, in GitHub: add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN` as repository secrets and run **Deploy CloudFormation** from the Actions tab.
 
----
+## Known limitations of v1
 
-### 🧩 3. Incomplete Infrastructure Scope
+- **Monolithic stack.** Everything is in one template, so every change has the full blast radius. The final build splits networking, load balancing, application, database and management into separate stacks.
+- **Web server is publicly exposed.** It sits in the public subnet with a public IP. Production traffic will go Internet → ALB → private-subnet Auto Scaling Group.
+- **No data or management tier yet.**
 
-The v1 prototype does not yet include several components required by the final architecture:
+## Roadmap to the final architecture
 
-* ⚖️ Application Load Balancer
-* 📈 Auto Scaling Group
-* 🗄️ Amazon RDS
-* 🔁 RDS Read Replica
-* 🔗 VPC Peering
-* 🛠️ Management EC2 Instance
-* 🔐 Production security rules
-* ☁️ Azure Blob Storage
-* 🚪 Azure Front Door
-* 🎥 HLS video delivery infrastructure
-
-These components will be introduced during the subsequent development phases.
-
----
-
-# 🗺️ Development Roadmap
-
-The final submission will transform the current prototype into a **modular, secure, multi-tier, multi-cloud architecture**.
-
-## 1️⃣ Modular CloudFormation Architecture
-
-The current monolithic CloudFormation stack will be refactored into smaller, independently manageable components.
-
-### Planned structure
-
-```text
-☁️ AWS Environment
-│
-├── 🌐 VPC / Networking
-├── ⚖️ Load Balancing
-├── 🖥️ Application Tier
-├── 🗄️ Database Tier
-└── 🛠️ Management Tier
 ```
-
-This approach will reduce the blast radius of infrastructure changes and improve maintainability.
-
----
-
-## 2️⃣ 🔗 VPC Peering
-
-A secondary **Private Services VPC (VPC B)** will be introduced and securely peered with the **Public Services VPC (VPC A)**.
-
-```text
-                 ☁️ AWS
-                  │
-        ┌─────────┴─────────┐
-        │                   │
-   🅰️ VPC A             🅱️ VPC B
- Public Services       Private Services
-        │                   │
-        └────── 🔗 ─────────┘
-            VPC Peering
-```
-
-VPC B will host sensitive internal resources such as the database and management infrastructure.
-
----
-
-## 3️⃣ ⚖️ Application Tier — VPC A
-
-The application tier will be redesigned to remove direct internet exposure from the web servers.
-
-### Architecture
-
-```text
-🌐 Internet
-     │
-     ▼
-⚖️ Internet-Facing ALB
-     │
-     ▼
-🔒 Private Subnets
-     │
-     ▼
-📈 Auto Scaling Group
-     │
- ┌───┴───┐
- ▼       ▼
-🖥️ EC2  🖥️ EC2
-Web      Web
-Server   Server
-```
-
-The **Application Load Balancer (ALB)** will:
-
-* 🌐 Accept internet traffic
-* ⚖️ Distribute requests between web servers
-* ❤️ Perform health checks
-* 🔒 Prevent direct public access to individual EC2 instances
-
-The web servers will run inside **private subnets** and will be managed by an **Auto Scaling Group**.
-
----
-
-## 4️⃣ 🗄️ Data Tier — VPC B
-
-The database infrastructure will be isolated within the **Private Services VPC**.
-
-### Planned architecture
-
-```text
-🖥️ Web Servers
+                 Users
+                   │
+      ┌────────────┴────────────┐
+      ▼                         ▼
+  AWS (application)        Azure (video)
+      │                         │
+  Internet-facing ALB      Azure Front Door
+      │                         │
+  Private subnets ── ASG   Blob Storage (HLS)
       │
-      │ 🔐 Database Port
-      ▼
-🗄️ Amazon RDS
-      │
-      ▼
-🔁 Read Replica
+  ┌───┴──────── VPC peering ────────┐
+  ▼                                 ▼
+VPC A: public services       VPC B: private services
+  web tier                     RDS + read replica
+                               management EC2 (SSH / ICMP)
 ```
 
-The RDS instance will only accept database traffic originating from the application/web tier.
+| Phase | Work |
+|---|---|
+| Modularise | Split the template into networking, load balancing, application, database and management stacks |
+| Application tier | Internet-facing ALB with health checks → Auto Scaling Group in private subnets |
+| VPC peering | Second VPC for private services, peered with the public-services VPC |
+| Data tier | RDS in VPC B, reachable only from the web tier's security group, plus a read replica |
+| Management tier | Hardened EC2 in VPC B for SSH and ICMP diagnostics into private resources |
+| Azure edge | Blob Storage for HLS video assets, delivered globally through Azure Front Door, configured with the Azure CLI |
+| Pipeline | Extend the GitHub Actions workflow to deploy each stack in dependency order |
 
-Security controls will ensure that:
+## What I've learned so far
 
-* 🔒 The database is not publicly accessible
-* 🛡️ Only authorised application resources can connect
-* 🚫 Unnecessary inbound traffic is blocked
-* 🔁 A Read Replica is available for read scalability
-
----
-
-## 5️⃣ 🛠️ Management Tier — VPC B
-
-A dedicated corporate management EC2 instance will provide controlled administrative access to the private infrastructure.
-
-```text
-             🛠️ Management EC2
-                    │
-          ┌─────────┴─────────┐
-          │                   │
-        🔐 SSH             📡 ICMP
-          │                   │
-          ▼                   ▼
-    🖥️ Web Servers       🗄️ Database
-```
-
-The management instance will be used for:
-
-* 🔐 SSH administration
-* 📡 ICMP diagnostics
-* 🔎 Troubleshooting
-* 🛠️ Infrastructure management
-
-Access will be restricted through appropriate **security groups and network controls**.
-
----
-
-# ☁️ Multi-Cloud Architecture
-
-The final platform will combine AWS application infrastructure with Azure-based video delivery.
-
-```text
-                         🌐 Users
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-              ▼                           ▼
-       ☁️ AWS Application          ☁️ Azure Video
-              │                       Delivery
-              │                           │
-              ▼                           ▼
-       ⚖️ AWS ALB              🚪 Azure Front Door
-              │                           │
-              ▼                           ▼
-       🔒 Private EC2              📦 Blob Storage
-              │                           │
-              ▼                           ▼
-         🗄️ Amazon RDS              🎥 HLS Video
-```
-
-### AWS ☁️
-
-Responsible for:
-
-* 🌐 Networking
-* ⚖️ Load balancing
-* 🖥️ Application hosting
-* 📈 Auto Scaling
-* 🗄️ Database services
-* 🛠️ Management infrastructure
-* 🔗 VPC connectivity
-
-### Azure 🔷
-
-Responsible for:
-
-* 📦 Video asset storage
-* 🎥 HLS content
-* 🚪 Global edge delivery
-* 🌍 Frontend video distribution
-
----
-
-# 🔄 Automation & Deployment
-
-The final infrastructure will follow an **Infrastructure as Code** approach.
-
-```text
-👨‍💻 Developer
-     │
-     ▼
-🐙 GitHub Repository
-     │
-     ▼
-🔄 GitHub Actions
-     │
-     ▼
-🏗️ CloudFormation
-     │
-     ▼
-☁️ AWS Infrastructure
-```
-
-This approach will provide:
-
-* ♻️ Repeatable deployments
-* 🔍 Version-controlled infrastructure
-* 🚀 Automated deployment workflows
-* 🧪 Consistent environments
-* 🔄 Easier infrastructure updates
-* 🛡️ Reduced manual configuration
-
----
-
-# 🎯 Final Architecture Goals
-
-The final submission aims to provide a:
-
-* ☁️ **Multi-cloud** architecture
-* 🧩 **Modular** infrastructure design
-* 🔒 **Secure** network architecture
-* 📈 **Scalable** application tier
-* 🗄️ **Highly isolated** database tier
-* ⚖️ **Load-balanced** web application
-* 🔄 **Automated** CI/CD deployment process
-* 🏗️ **Infrastructure-as-Code** implementation
-* 🌍 **Globally distributed** video delivery platform
-
----
-
-## 📌 Project Status
-
-> 🚧 **Current Status: Version 1 — Trial Build**
-
-The current repository establishes the initial AWS networking and web-server foundation. Development will continue by progressively introducing the modular architecture, private application tier, database infrastructure, management layer, VPC peering, CI/CD automation, and Azure video delivery environment.
-
----
-
-## 📚 Specification
-
-This project is developed in accordance with the requirements outlined in:
-
-**`505AZ_2627_FT_B1_N.pdf`**
-
-**Module:** Software Defined Networks and Edge Services (**505AZ**)
+- **Explicit `DependsOn` matters** when CloudFormation can't infer ordering — the default route has to wait for the IGW attachment or the stack fails midway.
+- **`!GetAZs` + `!Select` keeps templates region-agnostic** instead of hard-coding availability zone names.
+- **Pipelines make IaC honest.** Once the deploy runs from a clean runner with only the repo and secrets, anything that only worked on my laptop shows up immediately.
