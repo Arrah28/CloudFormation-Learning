@@ -73,4 +73,53 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-VPCA-Priv-AZ2
-      
+  
+  # NAT Gateway for VPC A Private Subnets so packages can be downaloded 
+  VPCANatEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  VPCANatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt VPCANatEIP.AllocationId
+      SubnetId: !Ref VPCAPublicSubnet1
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPCA-NAT
+
+  # VPC B Private Services for Backend & Management ec2
+ 
+  VPCB:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPCB-Backend
+
+  # VPC B  Private Subnets For RDS and Management EC2
+  VPCBPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId: !Ref VPCB
+      CidrBlock: 10.1.1.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPCB-Priv-AZ1
+
+  VPCBPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      VpcId: !Ref VPCB
+      CidrBlock: 10.1.2.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPCB-Priv-AZ2
