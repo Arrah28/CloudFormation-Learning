@@ -123,3 +123,16 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-VPCB-Priv-AZ2
+
+ # VPC Peering & Routing
+
+  VPCPeeringConnection:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      PeerVpcId: !Ref VPCB
+      VpcId: !Ref VPCA
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPC-Peering
+
+        
