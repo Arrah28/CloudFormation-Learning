@@ -331,3 +331,58 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-DB-SG
+Outputs:
+  VPCAId:
+    Description: VPC A ID
+    Value: !Ref VPCA
+    Export:
+      Name: PlanLetting-VPCAId
+  VPCBId:
+    Description: VPC B ID
+    Value: !Ref VPCB
+    Export:
+      Name: PlanLetting-VPCBId
+  VPCAPublicSubnet1Id:
+    Value: !Ref VPCAPublicSubnet1
+    Export:
+      Name: PlanLetting-VPCAPubSub1
+  VPCAPublicSubnet2Id:
+    Value: !Ref VPCAPublicSubnet2
+    Export:
+      Name: PlanLetting-VPCAPubSub2
+  VPCAPrivateSubnet1Id:
+    Value: !Ref VPCAPrivateSubnet1
+    Export:
+      Name: PlanLetting-VPCAPrivSub1
+  VPCAPrivateSubnet2Id:
+    Value: !Ref VPCAPrivateSubnet2
+    Export:
+      Name: PlanLetting-VPCAPrivSub2
+  VPCBPrivateSubnet1Id:
+    Value: !Ref VPCBPrivateSubnet1
+    Export:
+      Name: PlanLetting-VPCBPrivSub1
+  VPCBPrivateSubnet2Id:
+    Value: !Ref VPCBPrivateSubnet2
+    Export:
+      Name: PlanLetting-VPCBPrivSub2
+  ALBSecurityGroupId:
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: PlanLetting-ALBSG
+  WebSecurityGroupId:
+    Value: !Ref WebSecurityGroup
+    Export:
+      Name: PlanLetting-WebSG
+  DatabaseSecurityGroupId:
+    Value: !Ref DatabaseSecurityGroup
+    Export:
+      Name: PlanLetting-DBSG
+  BastionSecurityGroupId:
+    Value: !Ref BastionSecurityGroup
+    Export:
+      Name: PlanLetting-BastionSG
+  ManagementSecurityGroupId:
+    Value: !Ref ManagementSecurityGroup
+    Export:
+      Name: PlanLetting-MgmtSG
