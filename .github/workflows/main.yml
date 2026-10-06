@@ -28,7 +28,7 @@ jobs:
         run: | 
           aws cloudformation deploy \
           --stack-name PlanLetting-Network \
-          --template-file network.yaml \
+          --template-file Templates/Network.yaml \
           --capabilities CAPABILITY_NAMED_IAM
           
       - name: Get Network Outputs
