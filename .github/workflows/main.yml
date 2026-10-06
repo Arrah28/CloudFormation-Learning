@@ -1,12 +1,17 @@
 name: Deploy CloudFormation
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Configure Repo
         uses: actions/checkout@v4
+        
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -19,17 +24,16 @@ jobs:
         run: ls -R
         working-directory: ${{ github.workspace }}
         
-      - name: Deploy CloudFormation (v1)
+      - name: Deploy Stack 1 (Network)
         run: | 
           aws cloudformation deploy \
-          --stack-name PlanLetting-v1 \
-          --template-file V1/WebServer.yaml \
-          --parameter-overrides KeyName=vockey \
-          --capabilities CAPABILITY_NAMED_IAM \
+          --stack-name PlanLetting-Network \
+          --template-file network.yaml \
+          --capabilities CAPABILITY_NAMED_IAM
           
-      - name: Get Outputs
+      - name: Get Network Outputs
         run: | 
           aws cloudformation describe-stacks \
-          --stack-name PlanLetting-v1 \
+          --stack-name PlanLetting-Network \
           --query "Stacks[0].Outputs[*].{Key:OutputKey,Value:OutputValue}" \
-          --output text
+          --output table
