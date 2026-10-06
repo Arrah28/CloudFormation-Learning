@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Stack 1 - Plan-Letting Network Infrastructure. 
+  Provisions VPC A (Public Services) and VPC B (Private Services), VPC Peering, Routing, and Security Groups.
+
+Resources:
+  # VPC A Public Services 
+  VPCA:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPCA-Frontend
+
+  VPCAInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPCA-IGW
+
+  VPCAIGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPCA
+      InternetGatewayId: !Ref VPCAInternetGateway
+
+ 
