@@ -309,7 +309,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     DependsOn: VPCPeeringConnection
     Properties:
-      GroupDescription: Allows DB traffic from Web servers and Management EC2. Deny all else.
+      GroupDescription: Allows DB traffic from Web servers and Management EC2. Deny all else
       VpcId: !Ref VPCB
       SecurityGroupIngress:
         - IpProtocol: tcp
