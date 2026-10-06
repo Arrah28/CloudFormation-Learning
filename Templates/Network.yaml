@@ -135,4 +135,103 @@ Resources:
         - Key: Name
           Value: PlanLetting-VPC-Peering
 
-        
+# Route Tables - VPC A Public
+  VPCAPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCA
+      Tags:
+        - Key: Name
+          Value: VPCA-Public-RT
+          
+  VPCAPubRouteToIGW:
+    Type: AWS::EC2::Route
+    DependsOn: VPCAIGWAttachment
+    Properties:
+      RouteTableId: !Ref VPCAPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VPCAInternetGateway
+
+  VPCAPubRouteToVPCB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref VPCAPublicRouteTable
+      DestinationCidrBlock: 10.1.0.0/16
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  VPCAPubSubnet1Assoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VPCAPublicSubnet1
+      RouteTableId: !Ref VPCAPublicRouteTable
+
+  VPCAPubSubnet2Assoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VPCAPublicSubnet2
+      RouteTableId: !Ref VPCAPublicRouteTable
+
+  # Route Tables - VPC A Private
+  VPCAPrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCA
+      Tags:
+        - Key: Name
+          Value: VPCA-Private-RT
+
+  VPCAPrivRouteToNAT:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref VPCAPrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref VPCANatGateway
+
+  VPCAPrivRouteToVPCB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref VPCAPrivateRouteTable
+      DestinationCidrBlock: 10.1.0.0/16
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  VPCAPrivSubnet1Assoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VPCAPrivateSubnet1
+      RouteTableId: !Ref VPCAPrivateRouteTable
+
+  VPCAPrivSubnet2Assoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VPCAPrivateSubnet2
+      RouteTableId: !Ref VPCAPrivateRouteTable
+
+  # Route Tables - VPC B Private
+  VPCBPrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCB
+      Tags:
+        - Key: Name
+          Value: VPCB-Private-RT
+
+  VPCBPrivRouteToVPCA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref VPCBPrivateRouteTable
+      DestinationCidrBlock: 10.0.0.0/16
+      VpcPeeringConnectionId: !Ref VPCPeeringConnection
+
+  VPCBPrivSubnet1Assoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VPCBPrivateSubnet1
+      RouteTableId: !Ref VPCBPrivateRouteTable
+
+  VPCBPrivSubnet2Assoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VPCBPrivateSubnet2
+      RouteTableId: !Ref VPCBPrivateRouteTable
+
+  
