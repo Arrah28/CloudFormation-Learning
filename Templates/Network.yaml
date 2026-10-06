@@ -234,4 +234,100 @@ Resources:
       SubnetId: !Ref VPCBPrivateSubnet2
       RouteTableId: !Ref VPCBPrivateRouteTable
 
-  
+  # Security Groups
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows HTTP and HTTPS to ALB
+      VpcId: !Ref VPCA
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: PlanLetting-ALB-SG
+
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows SSH into Bastion from AWS Console
+      VpcId: !Ref VPCA
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: PlanLetting-Bastion-SG
+
+  ManagementSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPCPeeringConnection
+    Properties:
+      GroupDescription: Allos SSH from Bastion Host in VPC A
+      VpcId: !Ref VPCB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref BastionSecurityGroup
+      Tags:
+        - Key: Name
+          Value: PlanLetting-Mgmt-SG
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPCPeeringConnection
+    Properties:
+      GroupDescription: Allow traffic from ALB and Management Instance
+      VpcId: !Ref VPCA
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref ManagementSecurityGroup
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          SourceSecurityGroupId: !Ref ManagementSecurityGroup
+      Tags:
+        - Key: Name
+          Value: PlanLetting-Web-SG
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPCPeeringConnection
+    Properties:
+      GroupDescription: Allows DB traffic from Web servers and Management EC2. Deny all else.
+      VpcId: !Ref VPCB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref WebSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref ManagementSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref ManagementSecurityGroup
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          SourceSecurityGroupId: !Ref ManagementSecurityGroup
+      Tags:
+        - Key: Name
+          Value: PlanLetting-DB-SG
