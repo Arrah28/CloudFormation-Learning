@@ -28,4 +28,26 @@ Resources:
       VpcId: !Ref VPCA
       InternetGatewayId: !Ref VPCAInternetGateway
 
- 
+ # VPC A - Public Subnets which i will connec to the ALB 
+  VPCAPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId: !Ref VPCA
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPCA-Pub-AZ1
+
+  VPCAPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      VpcId: !Ref VPCA
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PlanLetting-VPCA-Pub-AZ2
+          
