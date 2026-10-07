@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: >
+  Stack 2 - Plan-Letting Application & Database
+  Creates the ALB, Web ASG and connection to RDS and 
+  Bastion Host in VPC A and Management EC2 in VPC B
+
+Parameters:
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+    Description: Amazon Linux 2023 
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 KeyPair for SSH access
+    Default: vockey
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: 8-41 letters and numbers only.
+    Description: RDS master password , i have set the password in the Github secret Actions 
+
+  DBEngineVersion:
+    Type: String
+    Default: '8.4.8'
+    Description: MySQL 8.4
+
+Resources:
+  # Compute & Management instnaces 
+  
+  BastionInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      ImageId: !Ref AmiId
+      SubnetId: !ImportValue PlanLetting-VPCAPubSub1
+      SecurityGroupIds:
+        - !ImportValue PlanLetting-BastionSG
+      Tags:
+        - Key: Name
+          Value: PlanLetting-Bastion-EC2
+
+  ManagementInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      ImageId: !Ref AmiId
+      SubnetId: !ImportValue PlanLetting-VPCBPrivSub1
+      SecurityGroupIds:
+        - !ImportValue PlanLetting-MgmtSG
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash -xe
+          dnf install -y mariadb105
+      Tags:
+        - Key: Name
+          Value: PlanLetting-Management-EC2
+
+  
