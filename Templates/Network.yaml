@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: >
+Description: 
   Stack 1 - Plan-Letting Network Infrastructure. 
   Provisions VPC A (Public Services) and VPC B (Private Services), VPC Peering, Routing, and Security Groups.
 

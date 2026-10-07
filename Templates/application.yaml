@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
-Description: >
+Description: 
   Stack 2 - Plan-Letting Application & Database
   Creates the ALB, Web ASG and connection to RDS and 
   Bastion Host in VPC A and Management EC2 in VPC B
