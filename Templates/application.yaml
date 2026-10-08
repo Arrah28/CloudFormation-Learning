@@ -64,7 +64,8 @@ Resources:
         - Key: Name
           Value: PlanLetting-Management-EC2
    
-  # 2. Database Tier for the RDS MySQL database, with a primary and a read replica in different AZs for high availability
+  # Database Tier for the RDS MySQL database, with a primary and a read replica in different AZs for high availability
+  # ALB , internet facing with target groups 
 
   RDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -117,5 +118,40 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-DB-Replica
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: PlanLetting-Web-ALB
+      Scheme: internet-facing
+      Subnets:
+        - !ImportValue PlanLetting-VPCAPubSub1
+        - !ImportValue PlanLetting-VPCAPubSub2
+      SecurityGroups:
+        - !ImportValue PlanLetting-ALBSG
+      Tags:
+        - Key: Name
+          Value: PlanLetting-ALB
+
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: PlanLetting-Web-TG
+      VpcId: !ImportValue PlanLetting-VPCAId
+      Port: 80
+      Protocol: HTTP
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      TargetType: instance
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
 
   
