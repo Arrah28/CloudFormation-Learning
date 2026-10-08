@@ -31,6 +31,7 @@ Parameters:
     Description: MySQL 8.4
 
 Resources:
+
   # Compute & Management instnaces 
   
   BastionInstance:
@@ -62,5 +63,59 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-Management-EC2
+   
+  # 2. Database Tier for the RDS MySQL database, with a primary and a read replica in different AZs for high availability
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets for RDS instances in VPC B
+      SubnetIds:
+        - !ImportValue PlanLetting-VPCBPrivSub1
+        - !ImportValue PlanLetting-VPCBPrivSub2
+
+  PrimaryDatabase:
+    Type: AWS::RDS::DBInstance
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [ W1011 ]
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: planletting-db-primary
+      AllocatedStorage: 20
+      DBInstanceClass: db.t3.micro
+      Engine: mysql
+      EngineVersion: !Ref DBEngineVersion
+      MasterUsername: admin
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      VPCSecurityGroups:
+        - !ImportValue PlanLetting-DBSG
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      PubliclyAccessible: false
+      StorageEncrypted: true
+      MultiAZ: false
+      BackupRetentionPeriod: 7
+      Tags:
+        - Key: Name
+          Value: PlanLetting-DB-Primary
+
+  ReplicaDatabase:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      DBInstanceIdentifier: planletting-db-replica
+      SourceDBInstanceIdentifier: !Ref PrimaryDatabase
+      DBInstanceClass: db.t3.micro
+      VPCSecurityGroups:
+        - !ImportValue PlanLetting-DBSG
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      PubliclyAccessible: false
+      Tags:
+        - Key: Name
+          Value: PlanLetting-DB-Replica
 
   
