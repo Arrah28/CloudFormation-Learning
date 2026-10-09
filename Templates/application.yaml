@@ -153,9 +153,9 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref ALBTargetGroup
-          WebLaunchTemplate:
-  
-  Type: AWS::EC2::LaunchTemplate
+          
+  WebLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateName: PlanLetting-Web-LT
       LaunchTemplateData:
@@ -191,9 +191,9 @@ Resources:
               }
             }
             PHP
-            WebAutoScalingGroup:
-  
-  Type: AWS::AutoScaling::AutoScalingGroup
+            
+  WebAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       AutoScalingGroupName: PlanLetting-Web-ASG
       VPCZoneIdentifier:
