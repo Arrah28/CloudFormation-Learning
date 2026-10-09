@@ -191,4 +191,41 @@ Resources:
               }
             }
             PHP
+            WebAutoScalingGroup:
+  
+  Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: PlanLetting-Web-ASG
+      VPCZoneIdentifier:
+        - !ImportValue PlanLetting-VPCAPrivSub1
+        - !ImportValue PlanLetting-VPCAPrivSub2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebLaunchTemplate
+        Version: !GetAtt WebLaunchTemplate.LatestVersionNumber
+      MinSize: '2'
+      MaxSize: '4'
+      DesiredCapacity: '2'
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+
+Outputs:
+  ALBDNSName:
+    Description: Public URL 
+    Value: !Sub http://${ApplicationLoadBalancer.DNSName}
+
+  BastionPublicIP:
+    Description: Public IP of Bastion host for jumping into private VPC
+    Value: !GetAtt BastionInstance.PublicIp
+
+  ManagementPrivateIP:
+    Description: Private IP of Management instance 
+    Value: !GetAtt ManagementInstance.PrivateIp
+
+  PrimaryDBEndpoint:
+    Description: Primary MySQL database 
+    Value: !GetAtt PrimaryDatabase.Endpoint.Address
+
+  ReplicaDBEndpoint:
+    Description: Read replica MySQL database 
+    Value: !GetAtt ReplicaDatabase.Endpoint.Address
   
