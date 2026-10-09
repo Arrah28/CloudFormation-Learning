@@ -31,9 +31,17 @@ jobs:
           --template-file Templates/Network.yaml \
           --capabilities CAPABILITY_NAMED_IAM
           
+      - name: Deploy Stack 2 (Application & Database)
+        run: | 
+          aws cloudformation deploy \
+          --stack-name PlanLetting-App \
+          --template-file Templates/application.yaml \
+          --parameter-overrides DBPassword="${{ secrets.DB_PASSWORD }}" KeyName=vockey \
+          --capabilities CAPABILITY_NAMED_IAM
+          
       - name: Get Network Outputs
         run: | 
           aws cloudformation describe-stacks \
-          --stack-name PlanLetting-Network \
+          --stack-name PlanLetting-App \
           --query "Stacks[0].Outputs[*].{Key:OutputKey,Value:OutputValue}" \
           --output table
