@@ -153,5 +153,15 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref ALBTargetGroup
-
+          WebLaunchTemplate:
+  
+  Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: PlanLetting-Web-LT
+      LaunchTemplateData:
+        ImageId: !Ref AmiId
+        InstanceType: t2.micro
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !ImportValue PlanLetting-WebSG
   
