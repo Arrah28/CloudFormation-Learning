@@ -164,4 +164,31 @@ Resources:
         KeyName: !Ref KeyName
         SecurityGroupIds:
           - !ImportValue PlanLetting-WebSG
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            dnf install -y httpd php php-mysqlnd jq
+            systemctl enable --now httpd
+            mkdir -p /etc/planletting
+            jq -n --arg h '${PrimaryDatabase.Endpoint.Address}' \
+                  --arg r '${ReplicaDatabase.Endpoint.Address}' \
+                  --arg u 'admin' --arg p '${DBPassword}' \
+                  '{host:$h, replica:$r, username:$u, password:$p}' > /etc/planletting/db.json
+            chown root:apache /etc/planletting/db.json
+            chmod 640 /etc/planletting/db.json
+            cat > /var/www/html/index.php <<'PHP'
+            <?php
+            $c = json_decode(file_get_contents('/etc/planletting/db.json'), true);
+            echo "<h1>Welcome to Plan-Letting</h1>";
+            echo "<p>Served by web server: " . gethostname() . "</p>";
+            foreach (['Primary' => $c['host'], 'Read Replica' => $c['replica']] as $name => $host) {
+              $db = @new mysqli($host, $c['username'], $c['password']);
+              if ($db->connect_error) {
+                echo "<p>$name database: CONNECTION FAILED</p>";
+              } else {
+                echo "<p>$name database connected - MySQL " . $db->server_info . "</p>";
+                $db->close();
+              }
+            }
+            PHP
   
