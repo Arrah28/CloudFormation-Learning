@@ -166,23 +166,13 @@ Resources:
           - !ImportValue PlanLetting-WebSG
         UserData:
           Fn::Base64: !Sub |
-            #!/bin/bash -xe
-            dnf install -y httpd php php-mysqlnd jq
-            systemctl enable --now httpd
-            mkdir -p /etc/planletting
-            jq -n --arg h '${PrimaryDatabase.Endpoint.Address}' \
-                  --arg r '${ReplicaDatabase.Endpoint.Address}' \
-                  --arg u 'admin' --arg p '${DBPassword}' \
-                  '{host:$h, replica:$r, username:$u, password:$p}' > /etc/planletting/db.json
-            chown root:apache /etc/planletting/db.json
-            chmod 640 /etc/planletting/db.json
             cat > /var/www/html/index.php <<'PHP'
             <?php
             $c = json_decode(file_get_contents('/etc/planletting/db.json'), true);
             echo "<h1>Welcome to Plan-Letting</h1>";
             echo "<p>Served by web server: " . gethostname() . "</p>";
-            foreach (['Primary' => $c['host'], 'Read Replica' => $c['replica']] as $name => $host) {
-              $db = @new mysqli($host, $c['username'], $c['password']);
+            foreach (['Primary' => $c['host'], 'Read Replica' =>$c['replica']] as $name =>$host) {
+              $db = @new mysqli($host, $c['username'],$c['password']);
               if ($db->connect_error) {
                 echo "<p>$name database: CONNECTION FAILED</p>";
               } else {
@@ -190,6 +180,22 @@ Resources:
                 $db->close();
               }
             }
+            ?>
+            <h2>HLS Stream via Azure Front Door CDN</h2>
+            <video id="video" controls width="640" height="360" autoplay></video>
+            <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.11.7/dist/shaka-player.ui.min.js"></script>
+            <link href="https://cdn.jsdelivr.net/npm/shaka-player@4.11.7/dist/controls.min.css" rel="stylesheet">
+            <script>
+              const sasToken = "sp=r&st=2026-10-11T15:07:42Z&se=2026-10-20T23:22:42Z&spr=https&sv=2026-02-06&sr=c&sig=eD0L1ZwHVzEKaCrKaROate7yketqB59OeokDz6n3RY0%3D";
+              const video = document.getElementById('video');
+              const player = new shaka.Player(video);
+              player.getNetworkingEngine().registerRequestFilter((type, request) => {
+                  if (type === shaka.net.NetworkingEngine.RequestType.SEGMENT || type === shaka.net.NetworkingEngine.RequestType.MANIFEST) {
+                      request.uris = request.uris.map(uri => `${uri}?${sasToken}`);
+                  }
+              });
+              player.load('https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/ABR/main.m3u8');
+            </script>
             PHP
             
   WebAutoScalingGroup:
