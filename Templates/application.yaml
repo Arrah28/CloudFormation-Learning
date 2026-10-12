@@ -243,9 +243,13 @@ Resources:
                     function addSASTokenToSegments(networkingEngine) {
                         networkingEngine.registerRequestFilter(function (type, request) {
                             if (type == shaka.net.NetworkingEngine.RequestType.SEGMENT || type === shaka.net.NetworkingEngine.RequestType.MANIFEST) {
-                                request.uris = request.uris.map(function(uri) {
-                                    return uri + '?' + sasToken;
-                                });
+                                // Only append if the SAS token isn't already attached to this specific URI
+                                if (!request.uris[0].includes('sp=')) {
+                                    request.uris = request.uris.map(function(uri) {
+                                        const separator = uri.includes('?') ? '&' : '?';
+                                        return uri + separator + sasToken;
+                                    });
+                                }
                             }
                         });
                     }
