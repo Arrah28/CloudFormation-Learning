@@ -209,7 +209,7 @@ Resources:
             <body>
                 <h1>MP4 Stream with SAS Token using Default Player</h1>
                 <video width="320" height="240" controls>
-                    <source src="https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/SteamboatWillie.mp4" type="video/mp4">
+                    <source src="https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/AWS-Iac-Recording.mov?sp=r&st=2026-10-12T12:38:03Z&se=2026-10-21T20:53:03Z&spr=https&sv=2026-02-06&sr=c&sig=7xXxPEw0TUP%2BV%2BHRxR82UUaxnmEUPAGGjf78v1VD4Qg%3D" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
 
@@ -227,7 +227,7 @@ Resources:
                 </div>
 
                 <script>
-                    const sasToken = "sp=r&st=2026-10-11T15:07:42Z&se=2026-10-20T23:22:42Z&spr=https&sv=2026-02-06&sr=c&sig=eD0L1ZwHVzEKaCrKaROate7yketqB59OeokDz6n3RY0%3D";
+                    const sasToken = "sp=r&st=2026-10-12T12:38:03Z&se=2026-10-21T20:53:03Z&spr=https&sv=2026-02-06&sr=c&sig=7xXxPEw0TUP%2BV%2BHRxR82UUaxnmEUPAGGjf78v1VD4Qg%3D";
                     console.log(sasToken);
 
                     const video = document.getElementById('video');
@@ -299,7 +299,7 @@ Resources:
                     async function initPlayer() {
                         const networkingEngine = player.getNetworkingEngine();
                         addSASTokenToSegments(networkingEngine);
-                        const manifestUri = 'https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/ABR/main.m3u8';
+                        const manifestUri = 'https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/ABR/master.m3u8';
                         try {
                             await player.load(manifestUri);
                             populateQualitySelector();
