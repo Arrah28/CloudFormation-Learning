@@ -233,10 +233,10 @@ Resources:
                     const video = document.getElementById('video');
                     const logList = document.getElementById('log-list');
 
-                    const player = new shaka.Player(video);
+                    // Initialize empty to avoid deprecation warning
+                    const player = new shaka.Player();
                     player.addEventListener('error', onErrorEvent);
 
-                    
                     const networkingEngine = player.getNetworkingEngine();
                     networkingEngine.registerRequestFilter(function (type, request) {
                         if (request.uris[0].includes('azurefd.net') && !request.uris[0].includes('sig=')) {
@@ -288,7 +288,8 @@ Resources:
                         entries.forEach(function (entry) {
                             if (entry.initiatorType === 'fetch' || entry.initiatorType === 'xmlhttprequest') {
                                 const url = new URL(entry.name);
-                                if (url.pathname.includes('.ts') || url.pathname.includes('.m3u8')) {
+                                // Look for MP4 chunk extensions (.m4s, .mp4) instead of .ts
+                                if (url.pathname.includes('.m4s') || url.pathname.includes('.mp4') || url.pathname.includes('.m3u8')) {
                                     const loadTime = entry.responseEnd - entry.startTime;
                                     logToPage('Segment ' + url.pathname.split('/').pop() + ' loaded: ' + loadTime.toFixed(2) + ' ms');
                                 }
@@ -300,6 +301,8 @@ Resources:
                     async function initPlayer() {
                         const manifestUri = 'https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/ABR/main.m3u8';
                         try {
+                            // Attach video securely
+                            await player.attach(video);
                             await player.load(manifestUri);
                             populateQualitySelector();
                             console.log('The video has now been loaded!');
