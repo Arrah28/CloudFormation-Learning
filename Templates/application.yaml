@@ -236,15 +236,14 @@ Resources:
                     const player = new shaka.Player(video);
                     player.addEventListener('error', onErrorEvent);
 
+                    
                     const networkingEngine = player.getNetworkingEngine();
                     networkingEngine.registerRequestFilter(function (type, request) {
-                        if (type == shaka.net.NetworkingEngine.RequestType.SEGMENT || type === shaka.net.NetworkingEngine.RequestType.MANIFEST) {
-                            if (!request.uris[0].includes('sig=')) {
-                                request.uris = request.uris.map(function(uri) {
-                                    const separator = uri.includes('?') ? '&' : '?';
-                                    return uri + separator + sasToken;
-                                });
-                            }
+                        if (request.uris[0].includes('azurefd.net') && !request.uris[0].includes('sig=')) {
+                            request.uris = request.uris.map(function(uri) {
+                                const separator = uri.includes('?') ? '&' : '?';
+                                return uri + separator + sasToken;
+                            });
                         }
                     });
 
