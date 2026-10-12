@@ -14,21 +14,21 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-VPCA-Frontend
-
+  # Internet Gateway for VPC A to allow public access to the ALB and other public services
   VPCAInternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
           Value: PlanLetting-VPCA-IGW
-
+  # VPC A Internet Gateway Attachment
   VPCAIGWAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref VPCA
       InternetGatewayId: !Ref VPCAInternetGateway
 
- # VPC A - Public Subnets which i will connec to the ALB 
+ # VPC A  Public Subnets which i will connec to the ALB 
   VPCAPublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -39,7 +39,7 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-VPCA-Pub-AZ1
-
+  # VPC A  Public Subnets which i will connec to the ALB
   VPCAPublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -51,7 +51,7 @@ Resources:
         - Key: Name
           Value: PlanLetting-VPCA-Pub-AZ2
           
- # VPC A - Private Subnets for the Web ASG 
+ # VPC A  Private Subnets for the Web ASG 
   VPCAPrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -143,7 +143,7 @@ Resources:
       Tags:
         - Key: Name
           Value: VPCA-Public-RT
-          
+  # Routes for VPC A Public Route Table        
   VPCAPubRouteToIGW:
     Type: AWS::EC2::Route
     DependsOn: VPCAIGWAttachment
@@ -151,27 +151,27 @@ Resources:
       RouteTableId: !Ref VPCAPublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref VPCAInternetGateway
-
+  # Routes for VPC A Public Route Table to VPC B
   VPCAPubRouteToVPCB:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref VPCAPublicRouteTable
       DestinationCidrBlock: 10.1.0.0/16
       VpcPeeringConnectionId: !Ref VPCPeeringConnection
-
+  # Subnet Route Table Associations for VPC A Public Subnets
   VPCAPubSubnet1Assoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref VPCAPublicSubnet1
       RouteTableId: !Ref VPCAPublicRouteTable
-
+  
   VPCAPubSubnet2Assoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref VPCAPublicSubnet2
       RouteTableId: !Ref VPCAPublicRouteTable
 
-  # Route Tables - VPC A Private
+  # Route Tables  VPC A Private
   VPCAPrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -179,7 +179,7 @@ Resources:
       Tags:
         - Key: Name
           Value: VPCA-Private-RT
-
+  # Routes for VPC A Private Route Table to NAT Gateway and VPC B
   VPCAPrivRouteToNAT:
     Type: AWS::EC2::Route
     Properties:
@@ -199,7 +199,7 @@ Resources:
     Properties:
       SubnetId: !Ref VPCAPrivateSubnet1
       RouteTableId: !Ref VPCAPrivateRouteTable
-
+  
   VPCAPrivSubnet2Assoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -234,7 +234,7 @@ Resources:
       SubnetId: !Ref VPCBPrivateSubnet2
       RouteTableId: !Ref VPCBPrivateRouteTable
 
-  # Security Groups
+  # Security Groups 
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -252,7 +252,7 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-ALB-SG
-
+  # Security Group for Bastion Host to allow SSH from AWS Console
   BastionSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -266,7 +266,7 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-Bastion-SG
-
+  # Security Group for Management EC2 to allow SSH from Bastion Host in VPC A
   ManagementSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     DependsOn: VPCPeeringConnection
@@ -281,7 +281,7 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-Mgmt-SG
-
+  # Security Grop for Web Servers to allow traffic from ALB and Management EC2
   WebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     DependsOn: VPCPeeringConnection
@@ -304,7 +304,7 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-Web-SG
-
+  # Security Group for Database to allow trffic from Web Servers and Management EC2
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     DependsOn: VPCPeeringConnection
@@ -331,6 +331,7 @@ Resources:
       Tags:
         - Key: Name
           Value: PlanLetting-DB-SG
+# Outputs for the stack to provide information about the resources created
 Outputs:
   VPCAId:
     Description: VPC A ID
