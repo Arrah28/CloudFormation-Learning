@@ -236,22 +236,20 @@ Resources:
                     const player = new shaka.Player(video);
                     player.addEventListener('error', onErrorEvent);
 
+                    const networkingEngine = player.getNetworkingEngine();
+                    networkingEngine.registerRequestFilter(function (type, request) {
+                        if (type == shaka.net.NetworkingEngine.RequestType.SEGMENT || type === shaka.net.NetworkingEngine.RequestType.MANIFEST) {
+                            if (!request.uris[0].includes('sig=')) {
+                                request.uris = request.uris.map(function(uri) {
+                                    const separator = uri.includes('?') ? '&' : '?';
+                                    return uri + separator + sasToken;
+                                });
+                            }
+                        }
+                    });
+
                     function onErrorEvent(event) {
                         console.error('Error code', event.detail.code, 'object', event.detail);
-                    }
-
-                    function addSASTokenToSegments(networkingEngine) {
-                        networkingEngine.registerRequestFilter(function (type, request) {
-                            if (type == shaka.net.NetworkingEngine.RequestType.SEGMENT || type === shaka.net.NetworkingEngine.RequestType.MANIFEST) {
-                                // Only append if the SAS token isn't already attached to this specific URI
-                                if (!request.uris[0].includes('sp=')) {
-                                    request.uris = request.uris.map(function(uri) {
-                                        const separator = uri.includes('?') ? '&' : '?';
-                                        return uri + separator + sasToken;
-                                    });
-                                }
-                            }
-                        });
                     }
 
                     function populateQualitySelector() {
@@ -301,8 +299,6 @@ Resources:
                     observer.observe({ entryTypes: ['resource'] });
 
                     async function initPlayer() {
-                        const networkingEngine = player.getNetworkingEngine();
-                        addSASTokenToSegments(networkingEngine);
                         const manifestUri = 'https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/ABR/main.m3u8';
                         try {
                             await player.load(manifestUri);
