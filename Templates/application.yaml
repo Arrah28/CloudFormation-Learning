@@ -299,7 +299,7 @@ Resources:
                     async function initPlayer() {
                         const networkingEngine = player.getNetworkingEngine();
                         addSASTokenToSegments(networkingEngine);
-                        const manifestUri = 'https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/ABR/master.m3u8';
+                        const manifestUri = 'https://rahmana36afdendpoint10239-f4bfhrg9geajapa9.a03.azurefd.net/afdcontainer10239/ABR/main.m3u8';
                         try {
                             await player.load(manifestUri);
                             populateQualitySelector();
