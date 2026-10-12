@@ -34,6 +34,7 @@ Resources:
 
   # Compute & Management instnaces 
   
+  # Bastion host dpleoyed in public VPC A for SSH access to private instances 
   BastionInstance:
     Type: AWS::EC2::Instance
     Properties:
@@ -42,11 +43,12 @@ Resources:
       ImageId: !Ref AmiId
       SubnetId: !ImportValue PlanLetting-VPCAPubSub1
       SecurityGroupIds:
-        - !ImportValue PlanLetting-BastionSG
+        - !ImportValue PlanLetting-BastionSG 
       Tags:
         - Key: Name
           Value: PlanLetting-Bastion-EC2
 
+  # Management instance deployed in private VPC B for management and monitoring of the application and databases
   ManagementInstance:
     Type: AWS::EC2::Instance
     Properties:
@@ -74,7 +76,8 @@ Resources:
       SubnetIds:
         - !ImportValue PlanLetting-VPCBPrivSub1
         - !ImportValue PlanLetting-VPCBPrivSub2
-
+  
+  # RDS MySQL database instances
   PrimaryDatabase:
     Type: AWS::RDS::DBInstance
     Metadata:
@@ -103,6 +106,7 @@ Resources:
         - Key: Name
           Value: PlanLetting-DB-Primary
 
+  # Read replica of the primary database for read scalability and high availability
   ReplicaDatabase:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Delete
@@ -119,6 +123,7 @@ Resources:
         - Key: Name
           Value: PlanLetting-DB-Replica
 
+  # Application Load Balancer and Web Auto Scaling Group for the application tier
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -133,6 +138,7 @@ Resources:
         - Key: Name
           Value: PlanLetting-ALB
 
+  # Target group for the ALB to route traffic to the web instances
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -144,6 +150,7 @@ Resources:
       HealthCheckIntervalSeconds: 30
       TargetType: instance
 
+  # ALB Listener to forward traffic from the ALB to the target groups 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -153,7 +160,8 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref ALBTargetGroup
-          
+
+  # Launch template for the web instances in the ASG with the user data to install and configure the applicatio      
   WebLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
@@ -183,7 +191,7 @@ Resources:
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>HLS Stream with SAS Token using Shaka Player</title>
-                <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.11.7/dist/shaka-player.ui.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.11.7/dist/shaka-player.ui.min.js"></script>  
                 <link href="https://cdn.jsdelivr.net/npm/shaka-player@4.11.7/dist/controls.min.css" rel="stylesheet">
                 <style>
                     #quality-selection {
@@ -306,7 +314,7 @@ Resources:
             </body>
             </html>
             HTML
-            
+  # ASG for the web instances to handle traffic from the ALB and scale based on demand       
   WebAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -314,6 +322,7 @@ Resources:
       VPCZoneIdentifier:
         - !ImportValue PlanLetting-VPCAPrivSub1
         - !ImportValue PlanLetting-VPCAPrivSub2
+      # Launch template for the web instances in the ASG with the user data to install and configure the application
       LaunchTemplate:
         LaunchTemplateId: !Ref WebLaunchTemplate
         Version: !GetAtt WebLaunchTemplate.LatestVersionNumber
@@ -323,6 +332,7 @@ Resources:
       TargetGroupARNs:
         - !Ref ALBTargetGroup
 
+# Outputs for the stack to provide useful information about the resources created
 Outputs:
   ALBDNSName:
     Description: Public URL 
