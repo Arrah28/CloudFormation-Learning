@@ -15,7 +15,8 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Description: EC2 KeyPair for SSH access
     Default: vockey
-
+    
+  # RDS MySQL database parameters
   DBPassword:
     Type: String
     NoEcho: true
@@ -172,7 +173,7 @@ Resources:
         KeyName: !Ref KeyName
         SecurityGroupIds:
           - !ImportValue PlanLetting-WebSG
-        UserData:
+        UserData: 
           Fn::Base64: !Sub |
             #!/bin/bash -xe
             dnf install -y httpd php php-mysqlnd jq
