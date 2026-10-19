@@ -271,7 +271,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     DependsOn: VPCPeeringConnection
     Properties:
-      GroupDescription: Allos SSH from Bastion Host in VPC A
+      GroupDescription: Allows SSH from Bastion Host in VPC A
       VpcId: !Ref VPCB
       SecurityGroupIngress:
         - IpProtocol: tcp
