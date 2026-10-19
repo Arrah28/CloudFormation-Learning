@@ -4,6 +4,8 @@ A multi-cloud deployment for a fictional property-letting platform. The web appl
 
 Built for the *Software Defined Networks & Edge Services* (505AZ) module, BSc Cloud Engineering, Coventry University.
 
+![Architecture](docs/images/PlanLetting-Platform-505AZ.drawio.png)
+
 ## Highlights
 
 - **Two-stack IaC.** A network stack and an application stack, linked by CloudFormation exports and imports, so networking can change without redeploying compute.
@@ -50,6 +52,8 @@ Anything not listed is denied by default. The database is not publicly accessibl
 2. **Store.** Segments are uploaded to a Blob container with anonymous access disabled.
 3. **Deliver.** Azure Front Door uses the storage account as its origin, over HTTPS only, with caching enabled for playlists and segments.
 4. **Authorise.** Requests carry a read-only, HTTPS-only SAS (`sp=r`, `spr=https`), appended to each segment request by a Shaka Player request filter.
+
+![CDN delivery: origin, regional caches, edge PoPs, users](docs/images/CDN-Diagram-505AZ-2.drawio.png)
 
 ## CI/CD pipeline
 
